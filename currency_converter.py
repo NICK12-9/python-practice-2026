@@ -1,4 +1,19 @@
 import json
+import requests
+def get_exchange_rates():
+    try:
+        response = requests.get("https://www.cbr-xml-daily.ru/daily_json.js")
+        response.raise_for_status()
+        data = response.json()
+        rates = {}
+        if 'Valute' in data:
+            for code, info in data['Valute'].items():
+                rates[code]=info['Value']
+        return rates
+    except Exception as e:
+        print(f"Не удалось загрузить курсы. Использую резервные значения.")
+        return {'USD': 90, 'EUR': 98, 'CNY': 12.5}
+
 history =[]
 try:
     with open('history.json', 'r') as file:
@@ -10,11 +25,9 @@ try:
 except (FileNotFoundError, json.JSONDecodeError, ValueError):
     history = []
 
-exchange_currency = {
-    'USD': 90,
-    'EUR': 98,
-    'CNY': 12.5
-}
+exchange_currency = get_exchange_rates()
+supported_currencies = {'USD', 'EUR', 'CNY'}
+exchange_currency = {k: v for k,v in exchange_currency.items() if k in supported_currencies}
 
 def save_history():
     with open('history.json', 'w') as file:
